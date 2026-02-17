@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, History, BarChart3, Gamepad2 } from "lucide-react";
+import { LayoutDashboard, Users, History, BarChart3, Package, Zap, Gamepad2 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import {
   Sidebar,
@@ -17,6 +17,8 @@ const navItems = [
   { title: "Proveedores", url: "/proveedores", icon: Users },
   { title: "Historial de Ventas", url: "/ventas", icon: History },
   { title: "Reportes", url: "/reportes", icon: BarChart3 },
+  { title: "Catálogo", url: "/catalogo", icon: Package },
+  { title: "Automatización", url: "/automatizacion", icon: Zap },
 ];
 
 export function AppSidebar() {
@@ -46,7 +48,7 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild>
                     <NavLink
                       to={item.url}
-                      end
+                      end={item.url === "/"}
                       className="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
                       activeClassName="bg-sidebar-accent text-primary font-medium"
                     >
