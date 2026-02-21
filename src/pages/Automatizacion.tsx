@@ -7,7 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Zap, ListOrdered, AlertTriangle, Info, Loader2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+const BASE = (import.meta.env.VITE_API_URL ?? "http://localhost:8000").replace(/\/+$/, "");
 
 interface LogEntry {
   id: string;

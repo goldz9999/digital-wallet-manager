@@ -10,7 +10,7 @@ interface MonthlyStat {
 }
 
 function fetchMonthlyStats(): Promise<MonthlyStat[]> {
-  const base = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+  const base = (import.meta.env.VITE_API_URL ?? "http://localhost:8000").replace(/\/+$/, "");
   return fetch(`${base}/api/stats/monthly`).then((r) => {
     if (!r.ok) throw new Error(`${r.status}`);
     return r.json();

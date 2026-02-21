@@ -12,7 +12,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { ChevronRight, ChevronLeft, Package, Plus, Search, DollarSign, Check, Sliders, ChevronDown, Loader2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+const BASE = (import.meta.env.VITE_API_URL ?? "http://localhost:8000").replace(/\/+$/, "");
 
 // ── Types ────────────────────────────────────────────────────────────────────
 interface EnebaProduct { id: string; name: string; platform: string; category: string; }

@@ -3,10 +3,11 @@
  * Configura VITE_API_URL en tu .env (ej: VITE_API_URL=http://localhost:8000)
  */
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+const BASE_URL = (import.meta.env.VITE_API_URL ?? "http://localhost:8000").replace(/\/+$/, "");
 
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE_URL}${path}`, {
+  const pathNorm = path.startsWith("/") ? path : `/${path}`;
+  const res = await fetch(`${BASE_URL}${pathNorm}`, {
     headers: { "Content-Type": "application/json", ...options?.headers },
     ...options,
   });
