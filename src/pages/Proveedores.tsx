@@ -80,11 +80,13 @@ const Proveedores = () => {
                   "text-[10px] gap-1",
                   p.status === "connected"
                     ? "bg-success/15 text-success border-success/30"
-                    : "bg-destructive/15 text-destructive border-destructive/30",
+                    : p.status === "pending"
+                      ? "bg-secondary text-secondary-foreground border-border"
+                      : "bg-destructive/15 text-destructive border-destructive/30",
                 )}
               >
-                {p.status === "connected" ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
-                {p.status === "connected" ? "Conectado" : "Error"}
+                {p.status === "connected" ? <Wifi className="h-3 w-3" /> : p.status === "pending" ? <RefreshCw className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
+                {p.status === "connected" ? "Conectado" : p.status === "pending" ? "Pendiente" : "Error"}
               </Badge>
             </div>
 

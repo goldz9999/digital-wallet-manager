@@ -109,7 +109,7 @@ export const fetchOrderDetail = (requestId: string): Promise<Order> =>
 
 export interface ProviderStatus {
   name: string;
-  status: "connected" | "error";
+  status: "connected" | "error" | "pending";
   message?: string;
   balance?: number;
 }
