@@ -117,7 +117,9 @@ export interface ProviderStatus {
 const providerToKey: Record<string, string> = { Bamboo: "bamboo", EZ: "ez", CardOne: "cardone" };
 
 export const fetchProviderStatus = (provider?: string): Promise<ProviderStatus[]> => {
-  const qs = provider ? `?provider=${encodeURIComponent(providerToKey[provider] ?? provider.toLowerCase())}` : "";
+  // Verificamos que sea un string antes de usar toLowerCase para evitar errores con React Query Context
+  const isString = typeof provider === "string";
+  const qs = isString ? `?provider=${encodeURIComponent(providerToKey[provider] ?? provider.toLowerCase())}` : "";
   return apiFetch<ProviderStatus[]>(`/admin/test-providers${qs}`);
 };
 

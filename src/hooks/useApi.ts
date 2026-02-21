@@ -19,7 +19,7 @@ import {
 export function useDashboardStats() {
   return useQuery({
     queryKey: ["dashboard-stats"],
-    queryFn: fetchStats,
+    queryFn: () => fetchStats(),
     staleTime: 30_000, // refresca cada 30 s
     retry: 2,
   });
@@ -50,7 +50,7 @@ export function useOrderDetail(requestId: string) {
 export function useProviderStatus() {
   return useQuery({
     queryKey: ["provider-status"],
-    queryFn: fetchProviderStatus,
+    queryFn: () => fetchProviderStatus(),
     staleTime: 60_000,
     retry: 1,
   });
@@ -61,7 +61,7 @@ export function useProviderStatus() {
 export function useBambooCatalog(enabled = false) {
   return useQuery({
     queryKey: ["catalog-bamboo"],
-    queryFn: fetchBambooCatalog,
+    queryFn: () => fetchBambooCatalog(),
     enabled,
     staleTime: 5 * 60_000,
     retry: 1,
@@ -71,7 +71,7 @@ export function useBambooCatalog(enabled = false) {
 export function useEZCatalog(enabled = false) {
   return useQuery({
     queryKey: ["catalog-ez"],
-    queryFn: fetchEZCatalog,
+    queryFn: () => fetchEZCatalog(),
     enabled,
     staleTime: 5 * 60_000,
     retry: 1,
@@ -81,7 +81,7 @@ export function useEZCatalog(enabled = false) {
 export function useCardOneCatalog(enabled = false) {
   return useQuery({
     queryKey: ["catalog-cardone"],
-    queryFn: fetchCardOneCatalog,
+    queryFn: () => fetchCardOneCatalog(),
     enabled,
     staleTime: 5 * 60_000,
     retry: 1,
