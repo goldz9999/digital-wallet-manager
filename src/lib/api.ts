@@ -114,8 +114,12 @@ export interface ProviderStatus {
   balance?: number;
 }
 
-export const fetchProviderStatus = (): Promise<ProviderStatus[]> =>
-  apiFetch<ProviderStatus[]>("/admin/test-providers");
+const providerToKey: Record<string, string> = { Bamboo: "bamboo", EZ: "ez", CardOne: "cardone" };
+
+export const fetchProviderStatus = (provider?: string): Promise<ProviderStatus[]> => {
+  const qs = provider ? `?provider=${encodeURIComponent(providerToKey[provider] ?? provider.toLowerCase())}` : "";
+  return apiFetch<ProviderStatus[]>(`/admin/test-providers${qs}`);
+};
 
 // ─── Catalogs ────────────────────────────────────────────────────────────────
 

@@ -15,8 +15,17 @@ const Proveedores = () => {
   const handleTestConnection = async (name: string) => {
     setTestingId(name);
     try {
-      await fetchProviderStatus();
-      await queryClient.invalidateQueries({ queryKey: ["provider-status"] });
+      const result = await fetchProviderStatus(name);
+      queryClient.setQueryData(["provider-status"], (old: typeof providers) => {
+        const list = Array.isArray(old) ? [...old] : [];
+        const idx = list.findIndex((p) => p.name === name);
+        const updated = result[0] ? { ...result[0] } : null;
+        if (updated) {
+          if (idx >= 0) list[idx] = updated;
+          else list.push(updated);
+        }
+        return list;
+      });
     } finally {
       setTestingId(null);
     }

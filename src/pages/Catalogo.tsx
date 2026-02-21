@@ -65,8 +65,8 @@ const Catalogo = () => {
   });
   const { data: supplierResults = [], isLoading: searchLoading } = useQuery<SupplierProduct[]>({
     queryKey: ["supplier-products", wizard.supplierId, supplierSearchCommitted],
-    queryFn: () => get(`/api/catalog/supplier-products?supplier_id=${wizard.supplierId}&q=${encodeURIComponent(supplierSearchCommitted)}`),
-    enabled: !!wizard.supplierId && !!supplierSearchCommitted,
+    queryFn: () => get(`/api/catalog/supplier-products?supplier_id=${encodeURIComponent(wizard.supplierId)}&q=${encodeURIComponent(supplierSearchCommitted)}`),
+    enabled: !!wizard.supplierId,
     staleTime: 60_000,
   });
 
@@ -98,7 +98,7 @@ const Catalogo = () => {
   }, [selectedSupplierProduct, wizard]);
 
   const canAdvance = useMemo(() => {
-    if (wizard.step === 1) return !!wizard.marketplaceProductId;
+    if (wizard.step === 1) return true;
     if (!wizard.supplierId || !wizard.supplierProductId || !selectedSupplierProduct) return false;
     if (selectedSupplierProduct.priceType === "fixed") return wizard.selectedFixedPrice !== null;
     const v = parseFloat(wizard.customPrice);
@@ -108,11 +108,11 @@ const Catalogo = () => {
   const openModal = () => { setWizard(initialWizard); setEnebaSearch(""); setSupplierSearch(""); setSupplierSearchCommitted(""); setOpen(true); };
 
   const handleSave = () => {
-    if (!selectedMarketplace || !selectedSupplier || !selectedSupplierProduct) return;
+    if (!selectedSupplier || !selectedSupplierProduct) return;
     saveMutation.mutate({
-      marketplaceProductId: selectedMarketplace.id,
-      marketplaceProductName: selectedMarketplace.name,
-      marketplacePlatform: selectedMarketplace.platform,
+      marketplaceProductId: selectedMarketplace?.id ?? "",
+      marketplaceProductName: selectedMarketplace?.name ?? "(Sin producto Eneba)",
+      marketplacePlatform: selectedMarketplace?.platform ?? "Eneba",
       supplierId: selectedSupplier.id,
       supplierName: selectedSupplier.name,
       supplierSku: selectedSupplierProduct.sku,
@@ -199,8 +199,8 @@ const Catalogo = () => {
               {wizard.step === 1 && (
                 <div className="space-y-5 text-center">
                   <div>
-                    <Label className="text-sm font-semibold block mb-1">Selecciona el producto de Eneba</Label>
-                    <p className="text-xs text-muted-foreground mb-4">Solo aparecen los productos sin proveedor asignado.</p>
+                    <Label className="text-sm font-semibold block mb-1">Selecciona el producto de Eneba (opcional)</Label>
+                    <p className="text-xs text-muted-foreground mb-4">Puedes omitir este paso por ahora e ir directo a proveedor y producto.</p>
                     <div className="relative mb-4">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input placeholder="Buscar por nombre o plataforma..." value={enebaSearch} onChange={(e) => setEnebaSearch(e.target.value)} className="pl-10 bg-secondary/50 border-border h-11 text-sm" autoFocus />
@@ -208,8 +208,9 @@ const Catalogo = () => {
                     {enebaLoading ? (
                       <div className="py-12 flex justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
                     ) : availableEnebaProducts.length === 0 ? (
-                      <div className="text-center py-12 text-muted-foreground text-sm">
-                        {enebaSearch ? `No hay productos que coincidan con "${enebaSearch}".` : "Todos los productos ya tienen un proveedor asignado."}
+                      <div className="text-center py-8 text-muted-foreground text-sm">
+                        {enebaSearch ? `No hay productos que coincidan con "${enebaSearch}".` : "Sin productos Eneba disponibles para mapear."}
+                        <p className="mt-3 text-xs">Puedes continuar sin seleccionar e ir a proveedor y producto.</p>
                       </div>
                     ) : (
                       <div className="space-y-2 max-h-[260px] overflow-y-auto [scrollbar-width:none]">
@@ -225,6 +226,7 @@ const Catalogo = () => {
                         ))}
                       </div>
                     )}
+                    <p className="text-xs text-muted-foreground mt-4">O haz clic en <strong>Siguiente</strong> para ir a proveedor y producto sin elegir Eneba.</p>
                   </div>
                 </div>
               )}
@@ -236,7 +238,7 @@ const Catalogo = () => {
                     <Check className="h-4 w-4 text-primary shrink-0" />
                     <div>
                       <p className="text-[11px] text-muted-foreground uppercase tracking-wide">Producto Eneba</p>
-                      <p className="text-sm font-semibold">{selectedMarketplace?.name}</p>
+                      <p className="text-sm font-semibold">{selectedMarketplace?.name ?? "Sin producto Eneba (por ahora)"}</p>
                     </div>
                   </div>
 
@@ -276,24 +278,24 @@ const Catalogo = () => {
 
                   {wizard.supplierId && (
                     <div>
-                      <Label className="text-sm font-semibold block mb-2">Buscar producto del proveedor <span className="text-muted-foreground font-normal text-xs">(USD)</span></Label>
+                      <Label className="text-sm font-semibold block mb-2">Buscar producto del proveedor <span className="text-muted-foreground font-normal text-xs">(escribe para filtrar o deja vacío para ver todos)</span></Label>
                       <div className="flex gap-2 mb-3">
                         <div className="relative flex-1">
                           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          <Input placeholder="Ej: Steam, PS Plus..." value={supplierSearch} onChange={(e) => setSupplierSearch(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && supplierSearch.trim()) { setSupplierSearchCommitted(supplierSearch.trim()); setWizard(w => ({ ...w, supplierProductId: "", selectedFixedPrice: null, customPrice: "" })); } }} className="pl-10 bg-secondary/50 border-border h-11 text-sm" />
+                          <Input placeholder="Ej: Steam, PS Plus... (opcional)" value={supplierSearch} onChange={(e) => setSupplierSearch(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { setSupplierSearchCommitted(supplierSearch.trim()); setWizard(w => ({ ...w, supplierProductId: "", selectedFixedPrice: null, customPrice: "" })); } }} className="pl-10 bg-secondary/50 border-border h-11 text-sm" />
                         </div>
-                        <Button onClick={() => { setSupplierSearchCommitted(supplierSearch.trim()); setWizard(w => ({ ...w, supplierProductId: "", selectedFixedPrice: null, customPrice: "" })); }} disabled={!supplierSearch.trim()} className="shrink-0 gap-2 h-11 px-6">
+                        <Button onClick={() => { setSupplierSearchCommitted(supplierSearch.trim()); setWizard(w => ({ ...w, supplierProductId: "", selectedFixedPrice: null, customPrice: "" })); }} className="shrink-0 gap-2 h-11 px-6">
                           {searchLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                           Buscar
                         </Button>
                       </div>
 
-                      {!supplierSearchCommitted ? (
-                        <p className="text-sm text-muted-foreground text-center py-8">Escribe el nombre del producto y haz clic en <strong>Buscar</strong>.</p>
-                      ) : searchLoading ? (
+                      {searchLoading ? (
                         <div className="py-8 flex justify-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
                       ) : supplierResults.length === 0 ? (
-                        <p className="text-sm text-muted-foreground text-center py-8">No se encontró "{supplierSearchCommitted}" en {selectedSupplier?.name}.</p>
+                        <p className="text-sm text-muted-foreground text-center py-8">
+                          {supplierSearchCommitted ? `No se encontró "${supplierSearchCommitted}" en ${selectedSupplier?.name}.` : `No hay productos en ${selectedSupplier?.name} para mostrar.`}
+                        </p>
                       ) : (
                         <div className="space-y-2 max-h-[280px] overflow-y-auto [scrollbar-width:none]">
                           {supplierResults.map((sp) => (
