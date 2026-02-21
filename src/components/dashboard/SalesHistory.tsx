@@ -1,19 +1,47 @@
-import { recentSales } from "@/data/mockData";
+import { useOrders } from "@/hooks/useApi";
 import { Badge } from "@/components/ui/badge";
+import { Loader2, AlertCircle } from "lucide-react";
+import type { Order } from "@/lib/api";
 
 const statusConfig = {
   completed: { label: "Completado", className: "bg-success/15 text-success border-success/30" },
   pending: { label: "Pendiente", className: "bg-warning/15 text-warning border-warning/30" },
   refunded: { label: "Reembolsado", className: "bg-destructive/15 text-destructive border-destructive/30" },
+  processing: { label: "Procesando", className: "bg-primary/15 text-primary border-primary/30" },
 };
 
+function orderToRow(o: Order) {
+  return {
+    id: o.id,
+    date: o.created_at?.slice(0, 10) ?? "—",
+    product: o.items?.[0]?.product_name ?? "—",
+    supplier: o.provider ?? "—",
+    soldOn: o.sold_on ?? "—",
+    costPrice: o.cost_price ?? 0,
+    salePrice: o.sale_price ?? 0,
+    status: (o.status ?? "pending") as keyof typeof statusConfig,
+  };
+}
+
 export function SalesHistory() {
+  const { data, isLoading, isError, error } = useOrders({ page: 1, page_size: 12 });
+
+  const rows = (data?.orders ?? []).map(orderToRow);
+
   return (
     <div className="glass-card rounded-lg p-5">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-base font-semibold">Historial de Ventas</h3>
         <span className="text-xs text-muted-foreground">Últimas 12 transacciones</span>
       </div>
+
+      {isError && (
+        <div className="flex items-center gap-2 text-destructive text-sm mb-3">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          <span>Error al cargar ventas: {String(error)}</span>
+        </div>
+      )}
+
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
@@ -29,28 +57,30 @@ export function SalesHistory() {
             </tr>
           </thead>
           <tbody>
-            {recentSales.map((sale) => {
-              const profit = sale.salePrice - sale.costPrice;
-              const st = statusConfig[sale.status];
-              return (
-                <tr key={sale.id} className="border-b border-border/50 hover:bg-secondary/30 transition-colors">
-                  <td className="py-2.5 px-2 font-mono text-xs text-muted-foreground">{sale.date}</td>
-                  <td className="py-2.5 px-2 font-medium">{sale.product}</td>
-                  <td className="py-2.5 px-2 text-muted-foreground">{sale.supplier}</td>
-                  <td className="py-2.5 px-2 text-primary">{sale.soldOn}</td>
-                  <td className="py-2.5 px-2 text-right font-mono">${sale.costPrice.toFixed(2)}</td>
-                  <td className="py-2.5 px-2 text-right font-mono">${sale.salePrice.toFixed(2)}</td>
-                  <td className={`py-2.5 px-2 text-right font-mono ${profit >= 0 ? "text-success" : "text-destructive"}`}>
-                    ${profit.toFixed(2)}
-                  </td>
-                  <td className="py-2.5 px-2 text-center">
-                    <Badge variant="outline" className={`text-[10px] ${st.className}`}>
-                      {st.label}
-                    </Badge>
-                  </td>
-                </tr>
-              );
-            })}
+            {isLoading ? (
+              <tr><td colSpan={8} className="py-10 text-center"><Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" /></td></tr>
+            ) : rows.length === 0 ? (
+              <tr><td colSpan={8} className="py-8 text-center text-muted-foreground text-sm">Sin ventas disponibles.</td></tr>
+            ) : (
+              rows.map((sale) => {
+                const profit = sale.salePrice - sale.costPrice;
+                const st = statusConfig[sale.status] ?? statusConfig.pending;
+                return (
+                  <tr key={sale.id} className="border-b border-border/50 hover:bg-secondary/30 transition-colors">
+                    <td className="py-2.5 px-2 font-mono text-xs text-muted-foreground">{sale.date}</td>
+                    <td className="py-2.5 px-2 font-medium">{sale.product}</td>
+                    <td className="py-2.5 px-2 text-muted-foreground">{sale.supplier}</td>
+                    <td className="py-2.5 px-2 text-primary">{sale.soldOn}</td>
+                    <td className="py-2.5 px-2 text-right font-mono">${sale.costPrice.toFixed(2)}</td>
+                    <td className="py-2.5 px-2 text-right font-mono">${sale.salePrice.toFixed(2)}</td>
+                    <td className={`py-2.5 px-2 text-right font-mono ${profit >= 0 ? "text-success" : "text-destructive"}`}>${profit.toFixed(2)}</td>
+                    <td className="py-2.5 px-2 text-center">
+                      <Badge variant="outline" className={`text-[10px] ${st.className}`}>{st.label}</Badge>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
           </tbody>
         </table>
       </div>

@@ -1,5 +1,19 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
-import { salesByPlatform } from "@/data/mockData";
+import { useQuery } from "@tanstack/react-query";
+import { AlertCircle } from "lucide-react";
+
+interface PlatformStat {
+  name: string;
+  value: number;
+}
+
+function fetchSalesByPlatform(): Promise<PlatformStat[]> {
+  const base = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+  return fetch(`${base}/api/stats/by-platform`).then((r) => {
+    if (!r.ok) throw new Error(`${r.status}`);
+    return r.json();
+  });
+}
 
 const COLORS = [
   "hsl(174 72% 50%)",
@@ -12,6 +26,36 @@ const COLORS = [
 ];
 
 export function SalesPieChart() {
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ["sales-by-platform"],
+    queryFn: fetchSalesByPlatform,
+    staleTime: 60_000,
+    retry: 2,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="glass-card rounded-lg p-5">
+        <h3 className="text-base font-semibold mb-4">Ventas por Plataforma</h3>
+        <div className="h-[300px] flex items-center justify-center">
+          <div className="w-32 h-32 rounded-full border-4 border-secondary animate-pulse" />
+        </div>
+      </div>
+    );
+  }
+
+  if (isError || !data || data.length === 0) {
+    return (
+      <div className="glass-card rounded-lg p-5">
+        <h3 className="text-base font-semibold mb-4">Ventas por Plataforma</h3>
+        <div className="h-[300px] flex items-center justify-center text-muted-foreground gap-2">
+          <AlertCircle className="h-4 w-4" />
+          <span className="text-sm">{isError ? `Error: ${String(error)}` : "Sin datos disponibles"}</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="glass-card rounded-lg p-5">
       <h3 className="text-base font-semibold mb-4">Ventas por Plataforma</h3>
@@ -20,7 +64,7 @@ export function SalesPieChart() {
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
-                data={salesByPlatform}
+                data={data}
                 cx="50%"
                 cy="50%"
                 innerRadius={55}
@@ -28,7 +72,7 @@ export function SalesPieChart() {
                 dataKey="value"
                 stroke="none"
               >
-                {salesByPlatform.map((_, index) => (
+                {data.map((_, index) => (
                   <Cell key={index} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
@@ -46,7 +90,7 @@ export function SalesPieChart() {
           </ResponsiveContainer>
         </div>
         <div className="w-1/2 space-y-2">
-          {salesByPlatform.map((item, i) => (
+          {data.map((item, i) => (
             <div key={item.name} className="flex items-center gap-2 text-sm">
               <div
                 className="w-2.5 h-2.5 rounded-full flex-shrink-0"

@@ -1,107 +1,115 @@
+import { useProviderStatus } from "@/hooks/useApi";
+import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { suppliers, type Supplier, type SupplierOrder } from "@/data/mockData";
+import { fetchProviderStatus } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Wifi, WifiOff, RefreshCw, Loader2 } from "lucide-react";
+import { Wifi, WifiOff, RefreshCw, Loader2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const Proveedores = () => {
+  const queryClient = useQueryClient();
   const [testingId, setTestingId] = useState<string | null>(null);
+  const { data: providers, isLoading, isError, error } = useProviderStatus();
 
-  const handleTestConnection = async (s: Supplier) => {
-    setTestingId(s.id);
-    await new Promise((r) => setTimeout(r, 1500));
-    setTestingId(null);
+  const handleTestConnection = async (name: string) => {
+    setTestingId(name);
+    try {
+      await fetchProviderStatus();
+      await queryClient.invalidateQueries({ queryKey: ["provider-status"] });
+    } finally {
+      setTestingId(null);
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <h2 className="text-xl font-bold">Proveedores</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="glass-card rounded-lg p-5 animate-pulse space-y-3">
+              <div className="h-8 w-8 bg-secondary rounded" />
+              <div className="h-4 bg-secondary rounded w-1/2" />
+              <div className="h-3 bg-secondary rounded w-2/3" />
+              <div className="h-3 bg-secondary rounded w-1/2" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (isError || !providers) {
+    return (
+      <div className="space-y-6">
+        <h2 className="text-xl font-bold">Proveedores</h2>
+        <div className="glass-card rounded-lg p-6 flex items-center gap-3 text-destructive border-destructive/30">
+          <AlertCircle className="h-5 w-5 shrink-0" />
+          <div>
+            <p className="font-medium text-sm">Error al cargar proveedores</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{String(error)}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const logoMap: Record<string, string> = { Bamboo: "🎮", CardOne: "🍄", EZ: "🎵" };
 
   return (
     <div className="space-y-6">
       <h2 className="text-xl font-bold">Proveedores</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {suppliers.map((s) => {
-          const codigos = s.codigosComprados;
-          const invertido = s.invertido;
-          const saldo = s.saldo;
-          const status = s.connectionStatus ?? "connected";
-          const lastOrders: SupplierOrder[] = s.lastOrders ?? [];
+        {providers.map((p) => (
+          <div key={p.name} className="glass-card rounded-lg p-5 hover:border-primary/40 transition-colors cursor-pointer group">
+            <div className="flex items-start justify-between mb-2">
+              <div className="text-3xl">{logoMap[p.name] ?? "🏪"}</div>
+              <Badge
+                variant="outline"
+                className={cn(
+                  "text-[10px] gap-1",
+                  p.status === "connected"
+                    ? "bg-success/15 text-success border-success/30"
+                    : "bg-destructive/15 text-destructive border-destructive/30",
+                )}
+              >
+                {p.status === "connected" ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
+                {p.status === "connected" ? "Conectado" : "Error"}
+              </Badge>
+            </div>
 
-          return (
-            <div
-              key={s.id}
-              className="glass-card rounded-lg p-5 hover:border-primary/40 transition-colors cursor-pointer group"
-            >
-              <div className="flex items-start justify-between mb-2">
-                <div className="text-3xl">{s.logo}</div>
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    "text-[10px] gap-1",
-                    status === "connected"
-                      ? "bg-success/15 text-success border-success/30"
-                      : "bg-destructive/15 text-destructive border-destructive/30",
-                  )}
-                >
-                  {status === "connected" ? (
-                    <Wifi className="h-3 w-3" />
-                  ) : (
-                    <WifiOff className="h-3 w-3" />
-                  )}
-                  {status === "connected" ? "Conectado" : "Error"}
-                </Badge>
-              </div>
-              <p className="font-semibold text-sm group-hover:text-primary transition-colors">{s.name}</p>
+            <p className="font-semibold text-sm group-hover:text-primary transition-colors">{p.name}</p>
 
-              <div className="mt-3 space-y-1">
+            {p.message && (
+              <p className="text-xs text-muted-foreground mt-1">{p.message}</p>
+            )}
+
+            <div className="mt-3 space-y-1">
+              {p.balance !== undefined && (
                 <div className="flex justify-between text-xs">
                   <span className="text-muted-foreground">Balance disponible</span>
-                  <span className="font-mono text-green-600">${saldo.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between text-xs">
-                  <span className="text-muted-foreground">Códigos</span>
-                  <span className="font-mono">{codigos.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between text-xs">
-                  <span className="text-muted-foreground">Invertido</span>
-                  <span className="font-mono text-primary">${invertido.toLocaleString()}</span>
-                </div>
-              </div>
-
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-4 w-full border-border text-xs"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleTestConnection(s);
-                }}
-                disabled={testingId !== null}
-              >
-                {testingId === s.id ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <RefreshCw className="h-3.5 w-3.5" />
-                )}
-                <span className="ml-1.5">Probar conexión</span>
-              </Button>
-
-              {lastOrders.length > 0 && (
-                <div className="mt-4 pt-4 border-t border-border">
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">
-                    Últimas 3 órdenes
-                  </p>
-                  <ul className="space-y-1.5">
-                    {lastOrders.map((o) => (
-                      <li key={o.id} className="flex justify-between text-xs">
-                        <span className="truncate max-w-[120px]">{o.product}</span>
-                        <span className="font-mono shrink-0">${o.total.toFixed(0)}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  <span className="font-mono text-green-600">${p.balance.toLocaleString()}</span>
                 </div>
               )}
             </div>
-          );
-        })}
+
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-4 w-full border-border text-xs"
+              onClick={(e) => { e.stopPropagation(); handleTestConnection(p.name); }}
+              disabled={testingId !== null}
+            >
+              {testingId === p.name ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <RefreshCw className="h-3.5 w-3.5" />
+              )}
+              <span className="ml-1.5">Probar conexión</span>
+            </Button>
+          </div>
+        ))}
       </div>
     </div>
   );
