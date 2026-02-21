@@ -86,10 +86,10 @@ const Proveedores = () => {
             )}
 
             <div className="mt-3 space-y-1">
-              {p.balance !== undefined && (
+              {p.balance != null && (
                 <div className="flex justify-between text-xs">
                   <span className="text-muted-foreground">Balance disponible</span>
-                  <span className="font-mono text-green-600">${p.balance.toLocaleString()}</span>
+                  <span className="font-mono text-green-600">${Number(p.balance).toLocaleString()}</span>
                 </div>
               )}
             </div>
